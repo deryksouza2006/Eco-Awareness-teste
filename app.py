@@ -11,9 +11,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'checkpoint2-eco-awareness')
 
 DB_CONFIG = {
-    'user': os.getenv('ORACLE_USER', 'seu_usuario'),
-    'password': os.getenv('ORACLE_PASSWORD', 'sua_senha'),
-    'dsn': os.getenv('ORACLE_DSN', 'localhost/XEPDB1'),
+    'user': os.getenv('ORACLE_USER', 'rm563412'),
+    'password': os.getenv('ORACLE_PASSWORD', '091006'),
+    'dsn': os.getenv('ORACLE_DSN', 'oracle.fiap.com.br:1521/ORCL'),
 }
 
 SCHEMA_SQL_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
