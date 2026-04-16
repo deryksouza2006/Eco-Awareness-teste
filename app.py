@@ -1,68 +1,36 @@
 import os
-from decimal import Decimal
-from flask import Flask, render_template, request, redirect, url_for, flash
-
-try:
-    import oracledb
-except ImportError:
-    oracledb = None
+from flask import Flask, jsonify, render_template
+import oracledb
 
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'checkpoint2-eco-awareness')
-
-DB_CONFIG = {
-    'user': os.getenv('ORACLE_USER', 'rm563412'),
-    'password': os.getenv('ORACLE_PASSWORD', '091006'),
-    'dsn': os.getenv('ORACLE_DSN', 'oracle.fiap.com.br:1521/ORCL'),
-}
-
-SCHEMA_SQL_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
-
 
 def get_connection():
-    if oracledb is None:
-        raise RuntimeError(
-            'A biblioteca oracledb não está instalada. Execute: pip install oracledb'
-        )
-    return oracledb.connect(**DB_CONFIG)
+    user = os.getenv("ORACLE_USER")
+    password = os.getenv("ORACLE_PASSWORD")
+    dsn = os.getenv("ORACLE_DSN", "localhost:1521/XEPDB1")
 
+    if not user or not password:
+        raise RuntimeError("Defina ORACLE_USER e ORACLE_PASSWORD nas variáveis de ambiente.")
 
-def execute_schema():
-    """Executa o script de criação e carga inicial no banco Oracle."""
-    with open(SCHEMA_SQL_FILE, 'r', encoding='utf-8') as file:
-        content = file.read()
-
-    blocks = [block.strip() for block in content.split('/') if block.strip()]
-
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        for block in blocks:
-            cursor.execute(block)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    return oracledb.connect(user=user, password=password, dsn=dsn)
 
 
 PLSQL_CASHBACK = """
 DECLARE
     CURSOR c_participantes IS
         SELECT ID, USUARIO_ID, VALOR_PAGO, TIPO
-          FROM INSCRICOES
-         WHERE STATUS = 'PRESENT'
-         ORDER BY ID;
+        FROM INSCRICOES
+        WHERE STATUS = 'PRESENT'
+        ORDER BY ID;
 
-    v_id            INSCRICOES.ID%TYPE;
-    v_usuario_id    INSCRICOES.USUARIO_ID%TYPE;
-    v_valor_pago    INSCRICOES.VALOR_PAGO%TYPE;
-    v_tipo          INSCRICOES.TIPO%TYPE;
-    v_presencas     NUMBER;
-    v_percentual    NUMBER(5,2);
-    v_cashback      NUMBER(10,2);
-    v_total_processados NUMBER := 0;
+    v_id          INSCRICOES.ID%TYPE;
+    v_usuario_id  INSCRICOES.USUARIO_ID%TYPE;
+    v_valor_pago  INSCRICOES.VALOR_PAGO%TYPE;
+    v_tipo        INSCRICOES.TIPO%TYPE;
+
+    v_cashback    NUMBER(10,2);
+    v_percentual  NUMBER(5,2);
+    v_presencas   NUMBER;
 BEGIN
     OPEN c_participantes;
 
@@ -87,179 +55,139 @@ BEGIN
         v_cashback := ROUND(v_valor_pago * v_percentual, 2);
 
         UPDATE USUARIOS
-           SET SALDO = SALDO + v_cashback
+           SET SALDO = NVL(SALDO, 0) + v_cashback
          WHERE ID = v_usuario_id;
 
         INSERT INTO LOG_AUDITORIA (INSCRICAO_ID, MOTIVO)
         VALUES (
             v_id,
-            'Cashback aplicado de R$ ' || TO_CHAR(v_cashback, 'FM9999990D00') ||
-            ' | percentual: ' || TO_CHAR(v_percentual * 100, 'FM990D00') || '%' ||
-            ' | presencas: ' || v_presencas
+            'Cashback aplicado ao usuário ' || v_usuario_id ||
+            ' | inscrição ' || v_id ||
+            ' | percentual ' || TO_CHAR(v_percentual * 100) || '%' ||
+            ' | valor R$ ' || TO_CHAR(v_cashback, 'FM9999990D00')
         );
-
-        v_total_processados := v_total_processados + 1;
     END LOOP;
 
     CLOSE c_participantes;
-
-    :total_processados := v_total_processados;
-EXCEPTION
-    WHEN OTHERS THEN
-        IF c_participantes%ISOPEN THEN
-            CLOSE c_participantes;
-        END IF;
-        RAISE;
 END;
 """
 
+RESET_SQL = """
+BEGIN
+    UPDATE USUARIOS
+       SET SALDO =
+           CASE ID
+               WHEN 1 THEN 100
+               WHEN 2 THEN 50
+               WHEN 3 THEN 200
+               ELSE NVL(SALDO, 0)
+           END;
 
-def fetch_usuarios():
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT ID, NOME, EMAIL, PRIORIDADE, SALDO
-              FROM USUARIOS
-             ORDER BY ID
-            """
-        )
-        rows = cursor.fetchall()
-        return [
-            {
-                'id': row[0],
-                'nome': row[1],
-                'email': row[2],
-                'prioridade': row[3],
-                'saldo': float(row[4]) if isinstance(row[4], Decimal) else row[4],
-            }
-            for row in rows
-        ]
-    finally:
-        conn.close()
+    DELETE FROM LOG_AUDITORIA;
+END;
+"""
 
-
-
-def fetch_inscricoes():
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT I.ID, U.NOME, I.STATUS, I.VALOR_PAGO, I.TIPO
-              FROM INSCRICOES I
-              JOIN USUARIOS U ON U.ID = I.USUARIO_ID
-             ORDER BY I.ID
-            """
-        )
-        rows = cursor.fetchall()
-        return [
-            {
-                'id': row[0],
-                'usuario_nome': row[1],
-                'status': row[2],
-                'valor_pago': float(row[3]) if isinstance(row[3], Decimal) else row[3],
-                'tipo': row[4],
-            }
-            for row in rows
-        ]
-    finally:
-        conn.close()
-
-
-
-def fetch_logs(limit=20):
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT ID, INSCRICAO_ID, MOTIVO,
-                   TO_CHAR(DATA, 'DD/MM/YYYY HH24:MI:SS') AS DATA_FORMATADA
-              FROM LOG_AUDITORIA
-             ORDER BY ID DESC
-             FETCH FIRST :limit ROWS ONLY
-            """,
-            {'limit': limit},
-        )
-        rows = cursor.fetchall()
-        return [
-            {
-                'id': row[0],
-                'inscricao_id': row[1],
-                'motivo': row[2],
-                'data': row[3],
-            }
-            for row in rows
-        ]
-    finally:
-        conn.close()
-
-
-@app.route('/')
-def index():
-    error = None
-    usuarios = []
-    inscricoes = []
+def fetch_logs(cur):
+    cur.execute("""
+        SELECT ID,
+               INSCRICAO_ID,
+               MOTIVO,
+               TO_CHAR(DATA, 'DD/MM/YYYY HH24:MI:SS') AS DATA_FMT
+          FROM LOG_AUDITORIA
+         ORDER BY ID DESC
+    """)
     logs = []
+    for row in cur.fetchall():
+        logs.append({
+            "id": row[0],
+            "inscricao_id": row[1],
+            "motivo": row[2],
+            "data": row[3]
+        })
+    return logs
 
+def fetch_usuarios(cur):
+    cur.execute("""
+        SELECT
+            u.ID,
+            u.NOME,
+            u.EMAIL,
+            u.PRIORIDADE,
+            NVL(u.SALDO, 0) AS SALDO,
+            NVL((
+                SELECT COUNT(*)
+                  FROM INSCRICOES i
+                 WHERE i.USUARIO_ID = u.ID
+                   AND i.STATUS = 'PRESENT'
+            ), 0) AS PRESENCAS,
+            MAX(CASE
+                    WHEN i.STATUS = 'PRESENT' AND UPPER(i.TIPO) = 'VIP' THEN 'VIP'
+                    ELSE 'NORMAL'
+                END) AS TIPO_CASHBACK
+        FROM USUARIOS u
+        LEFT JOIN INSCRICOES i
+               ON i.USUARIO_ID = u.ID
+        GROUP BY u.ID, u.NOME, u.EMAIL, u.PRIORIDADE, u.SALDO
+        ORDER BY u.ID
+    """)
+    usuarios = []
+    for row in cur.fetchall():
+        usuarios.append({
+            "id": row[0],
+            "nome": row[1],
+            "email": row[2],
+            "prioridade": row[3],
+            "saldo": float(row[4]),
+            "presencas": int(row[5]),
+            "tipo_cashback": row[6] if row[6] else "NORMAL"
+        })
+    return usuarios
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/usuarios")
+def usuarios():
     try:
-        usuarios = fetch_usuarios()
-        inscricoes = fetch_inscricoes()
-        logs = fetch_logs()
-    except Exception as exc:
-        error = str(exc)
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                usuarios_data = fetch_usuarios(cur)
+        return jsonify({"success": True, "usuarios": usuarios_data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
-    return render_template(
-        'index.html',
-        usuarios=usuarios,
-        inscricoes=inscricoes,
-        logs=logs,
-        db_config=DB_CONFIG,
-        error=error,
-    )
-
-
-@app.post('/setup')
-def setup_database():
+@app.route("/processar-cashback", methods=["POST"])
+def processar_cashback():
     try:
-        execute_schema()
-        flash('Banco preparado com sucesso. Tabelas criadas e dados inseridos.', 'success')
-    except Exception as exc:
-        flash(f'Erro ao preparar o banco: {exc}', 'error')
-    return redirect(url_for('index'))
-
-
-@app.post('/executar-cashback')
-def executar_cashback():
-    conn = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        total_processados = cursor.var(int)
-        cursor.execute(PLSQL_CASHBACK, {'total_processados': total_processados})
-        conn.commit()
-
-        flash(
-            f'Cashback processado com sucesso. Inscrições tratadas: {total_processados.getvalue()}.',
-            'success',
-        )
-    except Exception as exc:
-        if conn is not None:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(PLSQL_CASHBACK)
+                conn.commit()
+                usuarios_data = fetch_usuarios(cur)
+                logs = fetch_logs(cur)
+        return jsonify({"success": True, "usuarios": usuarios_data, "logs": logs})
+    except Exception as e:
+        try:
             conn.rollback()
+        except Exception:
+            pass
+        return jsonify({"success": False, "error": str(e)}), 500
 
-        if oracledb is not None and isinstance(exc, oracledb.DatabaseError):
-            error, = exc.args
-            flash(f'Erro Oracle {error.code}: {error.message}', 'error')
-        else:
-            flash(f'Erro ao executar cashback: {exc}', 'error')
-    finally:
-        if conn is not None:
-            conn.close()
+@app.route("/resetar", methods=["POST"])
+def resetar():
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(RESET_SQL)
+                conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return jsonify({"success": False, "error": str(e)}), 500
 
-    return redirect(url_for('index'))
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

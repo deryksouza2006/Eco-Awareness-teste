@@ -1,175 +1,375 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eco-Awareness 2026 | Cashback Progressivo</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eco-Awareness 2026 — Cashback Progressivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #080f0a; --surface: #0d160f; --card: #111c14; --border: #1e3022; --border2: #2a4230;
+      --green: #22c55e; --green-dim: #16a34a; --green-pale: #bbf7d0; --teal: #2dd4bf;
+      --amber: #f59e0b; --amber-dim: #d97706; --red: #ef4444; --muted: #4b6b52;
+      --text: #d1fae5; --text2: #6ee7a0; --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif; --display: 'Syne', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 0% 0%, rgba(34,197,94,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 100% 100%, rgba(45,212,191,0.05) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(34,197,94,0.03) 0%, transparent 70%);
+    }
+    body::after {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    }
+    .wrapper { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+    header {
+      padding: 2.5rem 0 2rem; border-bottom: 1px solid var(--border); display: flex;
+      justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap;
+    }
+    .logo-area { display: flex; align-items: center; gap: 1rem; }
+    .eco-badge {
+      width: 48px; height: 48px; background: linear-gradient(135deg, var(--green-dim), var(--teal));
+      border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+      box-shadow: 0 0 30px rgba(34,197,94,0.3); animation: badgePulse 3s ease-in-out infinite;
+    }
+    @keyframes badgePulse { 0%,100% { box-shadow: 0 0 20px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 40px rgba(34,197,94,0.6); } }
+    h1 { font-family: var(--display); font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 800; color: var(--green-pale); letter-spacing: -0.02em; line-height: 1.1; }
+    h1 span { color: var(--green); }
+    .header-tag { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 0.2rem; }
+    .header-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .hstat { text-align: right; }
+    .hstat-label { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    .hstat-value { font-family: var(--mono); font-size: 1.3rem; font-weight: 500; color: var(--green); }
+    .tier-legend { display: flex; gap: 0.75rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tier-chip {
+      display: flex; align-items: center; gap: 0.5rem; background: var(--card); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0.4rem 0.9rem; font-family: var(--mono); font-size: 0.75rem;
+    }
+    .tier-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-gold { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+    .dot-vip { background: #2dd4bf; box-shadow: 0 0 6px rgba(45,212,191,0.5); }
+    .dot-base { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+    .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.25rem; align-items: start; }
+    @media (max-width: 800px) { .main-grid { grid-template-columns: 1fr; } }
+    .section-title {
+      font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    #users-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .user-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.2rem;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem 1rem; align-items: center;
+      transition: border-color 0.2s, transform 0.2s; animation: slideIn 0.4s ease both;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+    .user-card:hover { border-color: var(--border2); transform: translateX(3px); }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .avatar-1 { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); }
+    .avatar-2 { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); }
+    .avatar-3 { background: rgba(45,212,191,0.15); border: 1px solid rgba(45,212,191,0.3); }
+    .user-name { font-family: var(--display); font-size: 0.95rem; font-weight: 700; color: var(--green-pale); }
+    .user-meta { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); margin-top: 0.1rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .presence-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem; font-family: var(--mono); font-size: 0.65rem;
+      padding: 0.15rem 0.5rem; border-radius: 4px;
+    }
+    .presence-high { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+    .presence-mid { background: rgba(45,212,191,0.12); color: var(--teal); border: 1px solid rgba(45,212,191,0.2); }
+    .presence-low { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .user-saldo { text-align: right; flex-shrink: 0; }
+    .saldo-label { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .saldo-value { font-family: var(--mono); font-size: 1.15rem; font-weight: 500; color: var(--green); transition: color 0.4s; }
+    .saldo-value.updated { color: #86efac; animation: flash 0.8s ease; }
+    @keyframes flash { 0%,100% { color: var(--green); } 40% { color: #fff; } }
+    .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; }
+    .btn-cashback {
+      width: 100%; background: linear-gradient(135deg, var(--green-dim), #15803d); color: #dcfce7; border: none;
+      border-radius: 8px; padding: 1rem; font-family: var(--display); font-size: 1rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(34,197,94,0.2), inset 0 1px 0 rgba(255,255,255,0.1); position: relative; overflow: hidden;
+    }
+    .btn-cashback::before {
+      content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      transform: translateX(-100%); transition: transform 0.3s;
+    }
+    .btn-cashback:hover::before { transform: translateX(0); }
+    .btn-cashback:hover { box-shadow: 0 6px 30px rgba(34,197,94,0.35); }
+    .btn-cashback:active { transform: scale(0.98); }
+    .btn-cashback:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cashback.loading .spin { display: block; }
+    .btn-cashback.loading .btn-icon { display: none; }
+    .spin {
+      display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-reset {
+      width: 100%; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.6rem; font-family: var(--mono); font-size: 0.75rem; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em;
+    }
+    .btn-reset:hover { color: var(--red); border-color: rgba(239,68,68,0.3); }
+    .scale-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border); font-size: 0.82rem;
+    }
+    .scale-item:last-child { border-bottom: none; }
+    .scale-cond { color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
+    .scale-pct  { font-family: var(--mono); font-weight: 500; }
+    .pct-gold  { color: var(--amber); }
+    .pct-teal  { color: var(--teal); }
+    .pct-green { color: var(--green); }
+    .log-scroll { max-height: 260px; overflow-y: auto; font-family: var(--mono); font-size: 0.68rem; }
+    .log-scroll::-webkit-scrollbar { width: 3px; }
+    .log-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    .log-item { padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--muted); animation: fadeIn 0.3s ease; line-height: 1.4; }
+    .log-item:last-child { border: none; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .log-item.resumo { color: var(--green); }
+    .log-item.erro { color: var(--red); }
+    .log-date { color: var(--border2); margin-right: 0.4rem; }
+    #error-box {
+      display: none; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px;
+      padding: 0.75rem 1rem; color: #fca5a5; font-family: var(--mono); font-size: 0.78rem; margin-bottom: 1rem;
+    }
+    .empty { text-align: center; padding: 2rem; color: var(--muted); font-family: var(--mono); font-size: 0.8rem; }
+  </style>
 </head>
 <body>
-    <div class="page">
-        <header class="hero">
-            <div>
-                <p class="eyebrow">Checkpoint 2 • Database Application</p>
-                <h1>Eco-Awareness 2026</h1>
-                <p class="subtitle">
-                    Sistema web em Flask com Oracle para processar o programa de
-                    <strong>Cashback Progressivo</strong> usando <strong>cursor explícito</strong>
-                    em bloco anônimo PL/SQL.
-                </p>
-            </div>
-            <div class="actions">
-                <form method="post" action="{{ url_for('setup_database') }}">
-                    <button class="btn btn-secondary" type="submit">Preparar banco</button>
-                </form>
-                <form method="post" action="{{ url_for('executar_cashback') }}">
-                    <button class="btn btn-primary" type="submit">Executar cashback</button>
-                </form>
-            </div>
-        </header>
-
-        <section class="card info-grid">
-            <div>
-                <h2>Regras de negócio</h2>
-                <ul>
-                    <li>Processar somente inscrições com status <strong>PRESENT</strong>.</li>
-                    <li>Contar presenças do usuário dentro do loop do cursor.</li>
-                    <li>Aplicar 25% se o usuário tiver mais de 3 presenças.</li>
-                    <li>Aplicar 20% se a inscrição for VIP.</li>
-                    <li>Aplicar 10% nos demais casos.</li>
-                    <li>Atualizar o saldo em <strong>USUARIOS</strong> e registrar em <strong>LOG_AUDITORIA</strong>.</li>
-                </ul>
-            </div>
-            <div>
-                <h2>Configuração atual</h2>
-                <div class="config-box">
-                    <p><strong>Usuário Oracle:</strong> {{ db_config.user }}</p>
-                    <p><strong>DSN:</strong> {{ db_config.dsn }}</p>
-                    <p><strong>Biblioteca:</strong> oracledb + Flask</p>
-                </div>
-            </div>
-        </section>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <section class="alerts">
-                    {% for category, message in messages %}
-                        <div class="alert {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </section>
-            {% endif %}
-        {% endwith %}
-
-        {% if error %}
-            <section class="alert error">
-                {{ error }}
-            </section>
-        {% endif %}
-
-        <section class="content-grid">
-            <article class="card">
-                <div class="card-header">
-                    <h2>Usuários</h2>
-                    <span class="badge">{{ usuarios|length }} registros</span>
-                </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nome</th>
-                                <th>Email</th>
-                                <th>Prioridade</th>
-                                <th>Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for usuario in usuarios %}
-                                <tr>
-                                    <td>{{ usuario.id }}</td>
-                                    <td>{{ usuario.nome }}</td>
-                                    <td>{{ usuario.email }}</td>
-                                    <td>{{ usuario.prioridade }}</td>
-                                    <td>R$ {{ '%.2f'|format(usuario.saldo or 0) }}</td>
-                                </tr>
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" class="empty">Nenhum dado disponível.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </article>
-
-            <article class="card">
-                <div class="card-header">
-                    <h2>Inscrições</h2>
-                    <span class="badge">{{ inscricoes|length }} registros</span>
-                </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Usuário</th>
-                                <th>Status</th>
-                                <th>Valor pago</th>
-                                <th>Tipo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for inscricao in inscricoes %}
-                                <tr>
-                                    <td>{{ inscricao.id }}</td>
-                                    <td>{{ inscricao.usuario_nome }}</td>
-                                    <td>{{ inscricao.status }}</td>
-                                    <td>R$ {{ '%.2f'|format(inscricao.valor_pago or 0) }}</td>
-                                    <td>{{ inscricao.tipo }}</td>
-                                </tr>
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" class="empty">Nenhum dado disponível.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </article>
-        </section>
-
-        <section class="card">
-            <div class="card-header">
-                <h2>Últimos logs de auditoria</h2>
-                <span class="badge">{{ logs|length }} itens</span>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Inscrição</th>
-                            <th>Motivo</th>
-                            <th>Data</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in logs %}
-                            <tr>
-                                <td>{{ log.id }}</td>
-                                <td>{{ log.inscricao_id }}</td>
-                                <td>{{ log.motivo }}</td>
-                                <td>{{ log.data }}</td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="empty">Nenhum log gerado até agora.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+<div class="wrapper">
+  <header>
+    <div class="logo-area">
+      <div class="eco-badge">🌿</div>
+      <div>
+        <h1>Eco-Awareness <span>2026</span></h1>
+        <div class="header-tag">// Cashback Progressivo · Motor PL/SQL</div>
+      </div>
     </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-label">Participantes</div>
+        <div class="hstat-value" id="stat-total">—</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">Presentes</div>
+        <div class="hstat-value" id="stat-presentes">—</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">Saldo Total</div>
+        <div class="hstat-value" id="stat-saldo">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tier-legend">
+    <div class="tier-chip"><div class="tier-dot dot-gold"></div> &gt;3 presenças → 25% cashback</div>
+    <div class="tier-chip"><div class="tier-dot dot-vip"></div> Passe VIP → 20% cashback</div>
+    <div class="tier-chip"><div class="tier-dot dot-base"></div> Demais → 10% cashback</div>
+  </div>
+
+  <div id="error-box"></div>
+
+  <div class="main-grid">
+    <div>
+      <div class="section-title">// participantes</div>
+      <div id="users-list">
+        <div class="empty">Conectando ao banco de dados…</div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="panel">
+        <div class="section-title">// distribuição</div>
+        <button class="btn-cashback" id="btn-cashback" onclick="processarCashback()">
+          <div class="spin"></div>
+          <span class="btn-icon">⚡</span>
+          <span>Processar Cashback</span>
+        </button>
+        <div style="margin-top:0.6rem;">
+          <button class="btn-reset" onclick="resetar()">↺ Resetar saldos e logs</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-title">// escala de cashback</div>
+        <div class="scale-item">
+          <span class="scale-cond">Ativista &gt; 3 presenças</span>
+          <span class="scale-pct pct-gold">25%</span>
+        </div>
+        <div class="scale-item">
+          <span class="scale-cond">Tipo VIP</span>
+          <span class="scale-pct pct-teal">20%</span>
+        </div>
+        <div class="scale-item">
+          <span class="scale-cond">Demais</span>
+          <span class="scale-pct pct-green">10%</span>
+        </div>
+        <div style="margin-top:0.75rem;font-family:var(--mono);font-size:0.68rem;color:var(--muted);line-height:1.5;">
+          Cursor percorre inscrições<br>com <span style="color:var(--teal)">status = 'PRESENT'</span>.<br>
+          Subquery conta presenças<br>por usuário dentro do loop.
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-title">// log_auditoria</div>
+        <div class="log-scroll" id="log-panel">
+          <div class="log-item">Aguardando execução do bloco PL/SQL…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let usuarios = [];
+
+  function avatarClass(id) {
+    const c = ((id - 1) % 3) + 1;
+    return `avatar-${c}`;
+  }
+
+  function presenceBadge(presencas, tipo) {
+    if (presencas > 3) return `<span class="presence-badge presence-high">★ ${presencas} presenças · 25%</span>`;
+    if (tipo === 'VIP') return `<span class="presence-badge presence-mid">VIP · 20%</span>`;
+    return `<span class="presence-badge presence-low">${presencas} presenças · 10%</span>`;
+  }
+
+  function renderUsers(data, updatedIds = []) {
+    usuarios = data;
+    const list = document.getElementById('users-list');
+    list.innerHTML = '';
+
+    if (!data.length) {
+      list.innerHTML = '<div class="empty">Nenhum participante encontrado.</div>';
+      return;
+    }
+
+    let totalSaldo = 0, totalPresentes = 0;
+
+    data.forEach(u => {
+      totalSaldo += Number(u.saldo || 0);
+      if (u.presencas > 0) totalPresentes++;
+
+      const updated = updatedIds.includes(u.id);
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.id = `user-${u.id}`;
+      card.innerHTML = `
+        <div class="user-avatar ${avatarClass(u.id)}">
+          ${u.prioridade === 3 ? '🌟' : u.prioridade === 2 ? '🌱' : '🍃'}
+        </div>
+        <div class="user-info">
+          <div class="user-name">${u.nome}</div>
+          <div class="user-meta">
+            <span>${u.email}</span>
+            ${presenceBadge(u.presencas, u.tipo_cashback)}
+          </div>
+        </div>
+        <div class="user-saldo">
+          <div class="saldo-label">Saldo</div>
+          <div class="saldo-value ${updated ? 'updated' : ''}">
+            R$ ${Number(u.saldo).toFixed(2)}
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    document.getElementById('stat-total').textContent = data.length;
+    document.getElementById('stat-presentes').textContent = totalPresentes;
+    document.getElementById('stat-saldo').textContent = 'R$ ' + totalSaldo.toFixed(2);
+  }
+
+  function renderLogs(logs) {
+    const panel = document.getElementById('log-panel');
+    if (!logs || !logs.length) {
+      panel.innerHTML = '<div class="log-item">Nenhum registro encontrado.</div>';
+      return;
+    }
+    panel.innerHTML = '';
+    logs.forEach(l => {
+      const div = document.createElement('div');
+      const isResumo = l.motivo && l.motivo.startsWith('RESUMO');
+      const isErro   = l.motivo && l.motivo.startsWith('ERRO');
+      div.className = `log-item${isResumo ? ' resumo' : ''}${isErro ? ' erro' : ''}`;
+      div.innerHTML = `<span class="log-date">[${l.data}]</span>${l.motivo}`;
+      panel.appendChild(div);
+    });
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('error-box');
+    box.textContent = '⚠ ' + msg;
+    box.style.display = 'block';
+    setTimeout(() => box.style.display = 'none', 8000);
+  }
+
+  async function loadUsuarios() {
+    try {
+      const res = await fetch('/usuarios');
+      const data = await res.json();
+      if (data.success) renderUsers(data.usuarios);
+      else showError(data.error || 'Erro ao buscar usuários.');
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function processarCashback() {
+    const btn = document.getElementById('btn-cashback');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try {
+      const prevSaldos = Object.fromEntries(usuarios.map(u => [u.id, Number(u.saldo)]));
+      const res = await fetch('/processar-cashback', { method: 'POST' });
+      const data = await res.json();
+
+      if (data.success) {
+        const updatedIds = data.usuarios
+          .filter(u => Number(u.saldo) !== Number(prevSaldos[u.id]))
+          .map(u => u.id);
+
+        renderUsers(data.usuarios, updatedIds);
+        renderLogs(data.logs);
+      } else {
+        showError(data.error || 'Erro ao processar cashback.');
+      }
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  async function resetar() {
+    try {
+      const res = await fetch('/resetar', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        await loadUsuarios();
+        document.getElementById('log-panel').innerHTML =
+          '<div class="log-item">Saldos e logs resetados.</div>';
+      } else {
+        showError(data.error || 'Erro ao resetar.');
+      }
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  loadUsuarios();
+</script>
 </body>
 </html>
