@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Awareness 2026 | Cashback Progressivo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">Checkpoint 2 • Database Application</p>
+                <h1>Eco-Awareness 2026</h1>
+                <p class="subtitle">
+                    Sistema web em Flask com Oracle para processar o programa de
+                    <strong>Cashback Progressivo</strong> usando <strong>cursor explícito</strong>
+                    em bloco anônimo PL/SQL.
+                </p>
+            </div>
+            <div class="actions">
+                <form method="post" action="{{ url_for('setup_database') }}">
+                    <button class="btn btn-secondary" type="submit">Preparar banco</button>
+                </form>
+                <form method="post" action="{{ url_for('executar_cashback') }}">
+                    <button class="btn btn-primary" type="submit">Executar cashback</button>
+                </form>
+            </div>
+        </header>
+
+        <section class="card info-grid">
+            <div>
+                <h2>Regras de negócio</h2>
+                <ul>
+                    <li>Processar somente inscrições com status <strong>PRESENT</strong>.</li>
+                    <li>Contar presenças do usuário dentro do loop do cursor.</li>
+                    <li>Aplicar 25% se o usuário tiver mais de 3 presenças.</li>
+                    <li>Aplicar 20% se a inscrição for VIP.</li>
+                    <li>Aplicar 10% nos demais casos.</li>
+                    <li>Atualizar o saldo em <strong>USUARIOS</strong> e registrar em <strong>LOG_AUDITORIA</strong>.</li>
+                </ul>
+            </div>
+            <div>
+                <h2>Configuração atual</h2>
+                <div class="config-box">
+                    <p><strong>Usuário Oracle:</strong> {{ db_config.user }}</p>
+                    <p><strong>DSN:</strong> {{ db_config.dsn }}</p>
+                    <p><strong>Biblioteca:</strong> oracledb + Flask</p>
+                </div>
+            </div>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="alerts">
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        {% if error %}
+            <section class="alert error">
+                {{ error }}
+            </section>
+        {% endif %}
+
+        <section class="content-grid">
+            <article class="card">
+                <div class="card-header">
+                    <h2>Usuários</h2>
+                    <span class="badge">{{ usuarios|length }} registros</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Prioridade</th>
+                                <th>Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                                <tr>
+                                    <td>{{ usuario.id }}</td>
+                                    <td>{{ usuario.nome }}</td>
+                                    <td>{{ usuario.email }}</td>
+                                    <td>{{ usuario.prioridade }}</td>
+                                    <td>R$ {{ '%.2f'|format(usuario.saldo or 0) }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="empty">Nenhum dado disponível.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h2>Inscrições</h2>
+                    <span class="badge">{{ inscricoes|length }} registros</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuário</th>
+                                <th>Status</th>
+                                <th>Valor pago</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inscricao in inscricoes %}
+                                <tr>
+                                    <td>{{ inscricao.id }}</td>
+                                    <td>{{ inscricao.usuario_nome }}</td>
+                                    <td>{{ inscricao.status }}</td>
+                                    <td>R$ {{ '%.2f'|format(inscricao.valor_pago or 0) }}</td>
+                                    <td>{{ inscricao.tipo }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="empty">Nenhum dado disponível.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>Últimos logs de auditoria</h2>
+                <span class="badge">{{ logs|length }} itens</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Inscrição</th>
+                            <th>Motivo</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                            <tr>
+                                <td>{{ log.id }}</td>
+                                <td>{{ log.inscricao_id }}</td>
+                                <td>{{ log.motivo }}</td>
+                                <td>{{ log.data }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="empty">Nenhum log gerado até agora.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
